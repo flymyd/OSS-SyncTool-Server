@@ -3,8 +3,9 @@ import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-
-  // 开发环境允许所有源
+  
+  const isDevelopment = process.env.NODE_ENV === 'development';
+  
   app.enableCors({
     origin: true,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
@@ -12,5 +13,6 @@ async function bootstrap() {
   });
 
   await app.listen(process.env.PORT ?? 11451);
+  console.log(`应用运行在 ${process.env.NODE_ENV} 环境`);
 }
 bootstrap();

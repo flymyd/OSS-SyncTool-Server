@@ -1,10 +1,29 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { AppDataSource } from './config/Database';
+import { ConfigModule } from '@nestjs/config';
 import { UserModule } from './modules/user/user.module';
 import { WorkspaceModule } from './modules/workspace/workspace.module';
+import { WorkspaceRecordModule } from './modules/workspace-record/workspace-record.module';
+import { User } from './entities/user.entity';
+import { Workspace } from './entities/workspace.entity';
+import { WorkspaceRecord } from './entities/workspace-record.entity';
 
 @Module({
-  imports: [TypeOrmModule.forRoot(AppDataSource), UserModule, WorkspaceModule],
+  imports: [
+    ConfigModule.forRoot(),
+    TypeOrmModule.forRoot({
+      type: 'mysql',
+      host: process.env.DB_HOST || 'localhost',
+      port: parseInt(process.env.DB_PORT) || 3306,
+      username: process.env.DB_USERNAME || 'root',
+      password: process.env.DB_PASSWORD || 'root',
+      database: process.env.DB_DATABASE || 'osstool',
+      entities: [User, Workspace, WorkspaceRecord],
+      synchronize: true,
+    }),
+    UserModule,
+    WorkspaceModule,
+    WorkspaceRecordModule,
+  ],
 })
 export class AppModule {}
