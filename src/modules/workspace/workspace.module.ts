@@ -10,4 +10,4 @@ import { User } from '../../entities/user.entity';
   controllers: [WorkspaceController],
   providers: [WorkspaceService],
 })
-export class WorkspaceModule {} 
+export class WorkspaceModule {}

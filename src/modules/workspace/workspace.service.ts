@@ -1,4 +1,9 @@
-import { Injectable, ConflictException, ForbiddenException, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Workspace } from '../../entities/workspace.entity';
@@ -14,7 +19,10 @@ export class WorkspaceService {
     private userRepository: Repository<User>,
   ) {}
 
-  async create(createWorkspaceDto: CreateWorkspaceDto, userId: number): Promise<WorkspaceResponseDto> {
+  async create(
+    createWorkspaceDto: CreateWorkspaceDto,
+    userId: number,
+  ): Promise<WorkspaceResponseDto> {
     const existingWorkspace = await this.workspaceRepository.findOne({
       where: { name: createWorkspaceDto.name },
     });
@@ -40,7 +48,7 @@ export class WorkspaceService {
     const workspaces = await this.workspaceRepository.find({
       relations: ['creator'],
     });
-    return workspaces.map(workspace => this.transformToDto(workspace));
+    return workspaces.map((workspace) => this.transformToDto(workspace));
   }
 
   private transformToDto(workspace: Workspace): WorkspaceResponseDto {
@@ -72,4 +80,4 @@ export class WorkspaceService {
 
     await this.workspaceRepository.remove(workspace);
   }
-} 
+}

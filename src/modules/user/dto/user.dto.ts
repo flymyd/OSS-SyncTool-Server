@@ -11,4 +11,4 @@ export class LoginUserDto {
 export class ChangePasswordDto {
   oldPassword: string;
   newPassword: string;
-} 
+}

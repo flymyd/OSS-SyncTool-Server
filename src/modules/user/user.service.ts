@@ -1,8 +1,12 @@
-import { Injectable, ConflictException, UnauthorizedException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from '../../entities/user.entity';
-import { CreateUserDto, LoginUserDto, ChangePasswordDto } from './dto/user.dto';
+import { ChangePasswordDto, CreateUserDto, LoginUserDto } from './dto/user.dto';
 import * as bcrypt from 'bcrypt';
 import * as jwt from 'jsonwebtoken';
 
@@ -87,4 +91,4 @@ export class UserService {
 
     return { message: '密码修改成功' };
   }
-} 
+}

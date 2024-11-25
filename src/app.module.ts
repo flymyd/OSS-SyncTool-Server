@@ -5,10 +5,6 @@ import { UserModule } from './modules/user/user.module';
 import { WorkspaceModule } from './modules/workspace/workspace.module';
 
 @Module({
-  imports: [
-    TypeOrmModule.forRoot(AppDataSource),
-    UserModule,
-    WorkspaceModule,
-  ],
+  imports: [TypeOrmModule.forRoot(AppDataSource), UserModule, WorkspaceModule],
 })
 export class AppModule {}
