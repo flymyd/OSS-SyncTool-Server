@@ -24,6 +24,7 @@ export class WorkspaceRecordResponseDto {
   };
   createdAt: Date;
   updatedAt: Date;
+  previewUrl: string | null;
 }
 
 export class WorkspaceFileTreeDto {

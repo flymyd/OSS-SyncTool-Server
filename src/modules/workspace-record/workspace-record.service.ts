@@ -42,7 +42,7 @@ export class WorkspaceRecordService {
     }
   }
 
-  private getWorkspaceDir(workspaceId: number): string {
+  public getWorkspaceDir(workspaceId: number): string {
     return path.join(this.baseDir, workspaceId.toString());
   }
 
@@ -64,6 +64,9 @@ export class WorkspaceRecordService {
     
     // 写入文件
     await fs.promises.writeFile(fullPath, content);
+    
+    // 设置文件权限确保可读
+    await fs.promises.chmod(fullPath, 0o644);
   }
 
   async create(
@@ -228,7 +231,14 @@ export class WorkspaceRecordService {
     return fileTree;
   }
 
+  private isImageFile(fileName: string): boolean {
+    const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp'];
+    const ext = path.extname(fileName).toLowerCase();
+    return imageExtensions.includes(ext);
+  }
+
   private transformToDto(record: WorkspaceRecord): WorkspaceRecordResponseDto {
+    const isImage = this.isImageFile(record.filePath);
     return {
       id: record.id,
       filePath: record.filePath,
@@ -244,6 +254,7 @@ export class WorkspaceRecordService {
       },
       createdAt: record.createdAt,
       updatedAt: record.updatedAt,
+      previewUrl: isImage ? `/api/workspace-record/preview/${record.id}` : null,
     };
   }
 
@@ -255,5 +266,12 @@ export class WorkspaceRecordService {
     });
 
     return records.map(record => this.transformToDto(record));
+  }
+
+  async findOne(id: number): Promise<WorkspaceRecord | null> {
+    return this.workspaceRecordRepository.findOne({
+      where: { id },
+      relations: ['workspace'],
+    });
   }
 } 
