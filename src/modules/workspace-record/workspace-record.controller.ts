@@ -63,4 +63,11 @@ export class WorkspaceRecordController {
     const records = await this.workspaceRecordService.getFileTree(workspaceId);
     return { records };
   }
+
+  @Get('list/:workspaceId')
+  async getRecordsByWorkspace(
+    @Param('workspaceId') workspaceId: number,
+  ): Promise<WorkspaceRecordResponseDto[]> {
+    return this.workspaceRecordService.getRecordsByWorkspace(workspaceId);
+  }
 } 

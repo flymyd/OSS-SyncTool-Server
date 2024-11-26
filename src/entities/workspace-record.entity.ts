@@ -1,10 +1,11 @@
 import {
+  Entity,
+  PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
-  Entity,
-  ManyToOne,
-  PrimaryGeneratedColumn,
   UpdateDateColumn,
+  ManyToOne,
+  JoinColumn,
 } from 'typeorm';
 import { User } from './user.entity';
 import { Workspace } from './workspace.entity';
@@ -20,13 +21,18 @@ export class WorkspaceRecord {
   @Column()
   etag: string;
 
-  @Column('bigint')
+  @Column()
   size: number;
 
-  @ManyToOne(() => Workspace, { eager: true })
+  @ManyToOne(() => Workspace, { onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'workspaceId' })
   workspace: Workspace;
 
-  @ManyToOne(() => User, { eager: true })
+  @Column({ nullable: true })
+  workspaceId: number;
+
+  @ManyToOne(() => User)
+  @JoinColumn({ name: 'modifierId' })
   modifier: User;
 
   @CreateDateColumn()

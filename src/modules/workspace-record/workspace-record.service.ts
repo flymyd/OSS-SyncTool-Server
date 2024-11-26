@@ -57,11 +57,13 @@ export class WorkspaceRecordService {
     const fullPath = path.join(this.getWorkspaceDir(workspaceId), filePath);
     const dir = path.dirname(fullPath);
     
+    // 确保目录存在
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true });
     }
     
-    fs.writeFileSync(fullPath, content);
+    // 写入文件
+    await fs.promises.writeFile(fullPath, content);
   }
 
   async create(
@@ -71,6 +73,7 @@ export class WorkspaceRecordService {
   ): Promise<WorkspaceRecordResponseDto> {
     const workspace = await this.workspaceRepository.findOne({
       where: { id: createDto.workspaceId },
+      relations: ['creator'],
     });
     
     if (!workspace) {
@@ -81,17 +84,44 @@ export class WorkspaceRecordService {
       where: { id: userId },
     });
 
-    await this.ensureWorkspaceDir(workspace.id);
-    await this.writeFile(workspace.id, createDto.filePath, fileContent);
-
-    const record = this.workspaceRecordRepository.create({
-      ...createDto,
-      workspace,
-      modifier,
+    // 查找是否存在相同路径的记录
+    const existingRecord = await this.workspaceRecordRepository.findOne({
+      where: {
+        workspace: { id: createDto.workspaceId },
+        filePath: createDto.filePath,
+      },
+      relations: ['workspace', 'modifier'],
     });
 
-    const savedRecord = await this.workspaceRecordRepository.save(record);
-    return this.transformToDto(savedRecord);
+    // 确保工作区目录存在
+    await this.ensureWorkspaceDir(workspace.id);
+    
+    // 写入文件
+    await this.writeFile(workspace.id, createDto.filePath, fileContent);
+
+    if (existingRecord) {
+      // 如果存在记录，则更新
+      Object.assign(existingRecord, {
+        etag: createDto.etag,
+        size: createDto.size,
+        modifier,
+      });
+      
+      // 手动更新时间戳
+      existingRecord.updatedAt = new Date();
+      
+      const updatedRecord = await this.workspaceRecordRepository.save(existingRecord);
+      return this.transformToDto(updatedRecord);
+    } else {
+      // 如果不存在记录，则创建新记录
+      const record = this.workspaceRecordRepository.create({
+        ...createDto,
+        workspace,
+        modifier,
+      });
+      const savedRecord = await this.workspaceRecordRepository.save(record);
+      return this.transformToDto(savedRecord);
+    }
   }
 
   async update(
@@ -211,5 +241,15 @@ export class WorkspaceRecordService {
       createdAt: record.createdAt,
       updatedAt: record.updatedAt,
     };
+  }
+
+  async getRecordsByWorkspace(workspaceId: number): Promise<WorkspaceRecordResponseDto[]> {
+    const records = await this.workspaceRecordRepository.find({
+      where: { workspace: { id: workspaceId } },
+      relations: ['workspace', 'modifier'],
+      order: { createdAt: 'DESC' },
+    });
+
+    return records.map(record => this.transformToDto(record));
   }
 } 
