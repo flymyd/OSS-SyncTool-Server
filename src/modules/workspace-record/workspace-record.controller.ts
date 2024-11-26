@@ -34,10 +34,10 @@ interface SyncFileInfo {
 }
 
 @Controller('workspace-record')
-@UseGuards(AuthGuard)
 export class WorkspaceRecordController {
   constructor(private readonly workspaceRecordService: WorkspaceRecordService) {}
 
+  @UseGuards(AuthGuard)
   @Post()
   @UseInterceptors(FileInterceptor('file'))
   async create(
@@ -52,6 +52,7 @@ export class WorkspaceRecordController {
     );
   }
 
+  @UseGuards(AuthGuard)
   @Put(':id')
   @UseInterceptors(FileInterceptor('file'))
   async update(
@@ -68,6 +69,7 @@ export class WorkspaceRecordController {
     );
   }
 
+  @UseGuards(AuthGuard)
   @Get('tree/:workspaceId')
   async getFileTree(
     @Param('workspaceId') workspaceId: number,
@@ -76,6 +78,7 @@ export class WorkspaceRecordController {
     return { records };
   }
 
+  @UseGuards(AuthGuard)
   @Get('list/:workspaceId')
   async getRecordsByWorkspace(
     @Param('workspaceId') workspaceId: number,
@@ -84,6 +87,7 @@ export class WorkspaceRecordController {
     return { records };
   }
 
+  @UseGuards(AuthGuard)
   @Post('sync/:workspaceId/:env')
   async syncFiles(
     @Param('workspaceId') workspaceId: number,
@@ -106,28 +110,23 @@ export class WorkspaceRecordController {
         throw new NotFoundException('文件不存在');
       }
 
-      // 获取完整的文件路径，包括工作区目录和文件路径
       const workspaceDir = this.workspaceRecordService.getWorkspaceDir(record.workspaceId);
-      // 移除文件路径开头的斜杠，避免路径重复
       const cleanFilePath = record.filePath.startsWith('/') ? record.filePath.slice(1) : record.filePath;
       const filePath = path.join(workspaceDir, cleanFilePath);
 
-      console.log('预览文件路径:', filePath); // 添加日志便于调试
+      console.log('预览文件路径:', filePath);
 
       if (!fs.existsSync(filePath)) {
-        console.log('文件不存在:', filePath); // 添加日志便于调试
+        console.log('文件不存在:', filePath);
         throw new NotFoundException('文件不存在');
       }
 
-      // 获取文件的 MIME 类型
       const mimeType = this.getMimeType(filePath);
       res.setHeader('Content-Type', mimeType);
 
-      // 使用 stream 发送文件
       const fileStream = fs.createReadStream(filePath);
       fileStream.pipe(res);
 
-      // 错误处理
       fileStream.on('error', (error) => {
         console.error('文件读取错误:', error);
         if (!res.headersSent) {
