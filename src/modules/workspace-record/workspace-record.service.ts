@@ -172,6 +172,8 @@ export class WorkspaceRecordService {
     const fileTree: FileInfo[] = [];
     const dirMap = new Map<string, FileInfo>();
 
+    let dirIdCounter = -1; // 为目录生成负数ID，避免与文件ID冲突
+    
     records.forEach(record => {
       const pathParts = record.filePath.split('/').filter(Boolean);
       let currentPath = '';
@@ -183,6 +185,7 @@ export class WorkspaceRecordService {
         
         if (!dirMap.has(currentPath)) {
           const dirInfo: FileInfo = {
+            id: dirIdCounter--,  // 使用递减的负数作为目录的ID
             name: part,
             path: `/${currentPath}`,
             size: 0,
@@ -205,6 +208,7 @@ export class WorkspaceRecordService {
       // 处理文件
       const fileName = pathParts[pathParts.length - 1];
       const fileInfo: FileInfo = {
+        id: record.id,
         name: fileName,
         path: `/${record.filePath}`,
         size: record.size,

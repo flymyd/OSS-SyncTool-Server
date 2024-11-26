@@ -21,6 +21,14 @@ import {
 import { AuthGuard } from '../../guards/auth.guard';
 import { Express } from 'express';
 
+interface SyncFileInfo {
+  id: number;
+  path: string;
+  name: string;
+  size: number;
+  etag: string;
+}
+
 @Controller('workspace-record')
 @UseGuards(AuthGuard)
 export class WorkspaceRecordController {
@@ -67,7 +75,19 @@ export class WorkspaceRecordController {
   @Get('list/:workspaceId')
   async getRecordsByWorkspace(
     @Param('workspaceId') workspaceId: number,
-  ): Promise<WorkspaceRecordResponseDto[]> {
-    return this.workspaceRecordService.getRecordsByWorkspace(workspaceId);
+  ): Promise<{ records: WorkspaceRecordResponseDto[] }> {
+    const records = await this.workspaceRecordService.getRecordsByWorkspace(workspaceId);
+    return { records };
+  }
+
+  @Post('sync/:workspaceId/:env')
+  async syncFiles(
+    @Param('workspaceId') workspaceId: number,
+    @Param('env') env: 'dev' | 'test' | 'prod',
+    @Body() data: { files: SyncFileInfo[] }
+  ) {
+    console.log('需要同步的文件列表:', data.files);
+    // 这里您可以实现 OSS 同步逻辑
+    return { success: true };
   }
 } 
