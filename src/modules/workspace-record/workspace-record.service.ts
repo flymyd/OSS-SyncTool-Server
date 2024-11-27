@@ -159,7 +159,7 @@ export class WorkspaceRecordService {
     });
 
     if (!workspace) {
-      throw new NotFoundException(`工作区 ${workspaceId} 不存在`);
+      throw new NotFoundException(`工作区不存在或已被删除`);
     }
 
     const records = await this.workspaceRecordRepository.find({
@@ -259,6 +259,14 @@ export class WorkspaceRecordService {
   }
 
   async getRecordsByWorkspace(workspaceId: number): Promise<WorkspaceRecordResponseDto[]> {
+    const workspace = await this.workspaceRepository.findOne({
+      where: { id: workspaceId },
+    });
+
+    if (!workspace) {
+      throw new NotFoundException(`工作区不存在或已被删除`);
+    }
+
     const records = await this.workspaceRecordRepository.find({
       where: { workspace: { id: workspaceId } },
       relations: ['workspace', 'modifier'],
