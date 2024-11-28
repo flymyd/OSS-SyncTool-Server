@@ -47,13 +47,7 @@ export class WorkspaceRecordService {
     @InjectRepository(SyncTaskRecord)
     private syncTaskRecordRepository: Repository<SyncTaskRecord>,
   ) {
-    // 根据环境设置基础目录
-    if (process.env.NODE_ENV === 'development') {
-      this.baseDir = path.join(require('os').tmpdir(), 'workspace-files');
-    } else {
-      this.baseDir = process.env.WORKSPACE_BASE_DIR || 'workspace-files';
-    }
-
+    this.baseDir = process.env.WORKSPACE_BASE_DIR || path.join(require('os').tmpdir(), 'workspace-files');
     // 确保基础目录存在
     if (!fs.existsSync(this.baseDir)) {
       fs.mkdirSync(this.baseDir, { recursive: true });
