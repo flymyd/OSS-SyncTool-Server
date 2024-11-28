@@ -16,6 +16,18 @@ import {
   WorkspaceRecordResponseDto,
 } from './dto/workspace-record.dto';
 import { FileInfo } from '../../types/workspace';
+import { SyncTask, SyncTaskStatus } from '../../entities/sync-task.entity';
+import { SyncTaskRecord, SyncTaskRecordStatus } from '../../entities/sync-task-record.entity';
+
+// 在文件顶部添加接口定义
+interface SyncFileInfo {
+  id: number;
+  path: string;
+  name: string;
+  size: number;
+  etag: string;
+  modifiedTime?: string;
+}
 
 @Injectable()
 export class WorkspaceRecordService {
@@ -28,6 +40,10 @@ export class WorkspaceRecordService {
     private workspaceRepository: Repository<Workspace>,
     @InjectRepository(User)
     private userRepository: Repository<User>,
+    @InjectRepository(SyncTask)
+    private syncTaskRepository: Repository<SyncTask>,
+    @InjectRepository(SyncTaskRecord)
+    private syncTaskRecordRepository: Repository<SyncTaskRecord>,
   ) {
     // 根据环境设置基础目录
     if (process.env.NODE_ENV === 'development') {
@@ -110,7 +126,7 @@ export class WorkspaceRecordService {
         modifier,
       });
       
-      // 手动更新时间戳
+      // 动更新时间戳
       existingRecord.updatedAt = new Date();
       
       const updatedRecord = await this.workspaceRecordRepository.save(existingRecord);
@@ -281,5 +297,72 @@ export class WorkspaceRecordService {
       where: { id },
       relations: ['workspace'],
     });
+  }
+
+  async syncFiles(
+    workspaceId: number,
+    env: 'dev' | 'test' | 'prod',
+    files: SyncFileInfo[],
+    userId: number,
+  ): Promise<SyncTask> {
+    const workspace = await this.workspaceRepository.findOne({
+      where: { id: workspaceId },
+    });
+    
+    if (!workspace) {
+      throw new NotFoundException('工作区不存在');
+    }
+
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+    });
+
+    // 创建同步任务
+    const syncTask = this.syncTaskRepository.create({
+      workspaceId: workspace.id,
+      creatorId: user.id,
+      targetEnv: env,
+      totalFiles: files.length,
+      failedFiles: 0,
+      status: SyncTaskStatus.SUCCESS,
+    });
+
+    await this.syncTaskRepository.save(syncTask);
+
+    // 处理每个文件
+    for (const file of files) {
+      const syncTaskRecord = this.syncTaskRecordRepository.create({
+        syncTaskId: syncTask.id,
+        filePath: file.path,
+        fileName: file.name,
+        fileSize: file.size,
+        fileMd5: file.etag,
+        lastModified: file.modifiedTime ? new Date(file.modifiedTime) : new Date(),
+        modifierId: user.id,
+        status: SyncTaskRecordStatus.SUCCESS,
+      });
+
+      try {
+        // TODO: 这里实现实际的OSS上传逻辑
+        // await this.uploadToOSS(file, env);
+        
+        await this.syncTaskRecordRepository.save(syncTaskRecord);
+      } catch (error) {
+        syncTaskRecord.status = SyncTaskRecordStatus.FAILED;
+        syncTaskRecord.errorMessage = error.message;
+        await this.syncTaskRecordRepository.save(syncTaskRecord);
+        
+        // 更新主任务的失败计数
+        syncTask.failedFiles += 1;
+        if (syncTask.failedFiles === syncTask.totalFiles) {
+          syncTask.status = SyncTaskStatus.FAILED;
+        } else {
+          syncTask.status = SyncTaskStatus.PARTIAL_SUCCESS;
+        }
+        await this.syncTaskRepository.save(syncTask);
+      }
+    }
+
+    return syncTask;
   }
 } 

@@ -24,6 +24,8 @@ import { AuthGuard } from '../../guards/auth.guard';
 import { Express, Response } from 'express';
 import * as path from 'path';
 import * as fs from 'fs';
+import { SyncTask, SyncTaskStatus } from '../../entities/sync-task.entity';
+import { SyncTaskRecord, SyncTaskRecordStatus } from '../../entities/sync-task-record.entity';
 
 interface SyncFileInfo {
   id: number;
@@ -31,6 +33,7 @@ interface SyncFileInfo {
   name: string;
   size: number;
   etag: string;
+  modifiedTime?: string;
 }
 
 @Controller('workspace-record')
@@ -92,11 +95,12 @@ export class WorkspaceRecordController {
   async syncFiles(
     @Param('workspaceId') workspaceId: number,
     @Param('env') env: 'dev' | 'test' | 'prod',
-    @Body() data: { files: SyncFileInfo[] }
+    @Body() data: { files: SyncFileInfo[] },
+    @Request() req,
   ) {
+    console.log('待同步的环境', env)
     console.log('需要同步的文件列表:', data.files);
-    // 这里您可以实现 OSS 同步逻辑
-    return { success: true };
+    return this.workspaceRecordService.syncFiles(workspaceId, env, data.files, req.user.userId);
   }
 
   @Get('preview/:id')

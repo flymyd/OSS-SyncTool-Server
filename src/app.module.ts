@@ -7,6 +7,8 @@ import { WorkspaceRecordModule } from './modules/workspace-record/workspace-reco
 import { User } from './entities/user.entity';
 import { Workspace } from './entities/workspace.entity';
 import { WorkspaceRecord } from './entities/workspace-record.entity';
+import { SyncTask } from './entities/sync-task.entity';
+import { SyncTaskRecord } from './entities/sync-task-record.entity';
 
 @Module({
   imports: [
@@ -18,7 +20,7 @@ import { WorkspaceRecord } from './entities/workspace-record.entity';
       username: process.env.DB_USERNAME || 'root',
       password: process.env.DB_PASSWORD || 'root',
       database: process.env.DB_DATABASE || 'osstool',
-      entities: [User, Workspace, WorkspaceRecord],
+      entities: [User, Workspace, WorkspaceRecord, SyncTask, SyncTaskRecord],
       synchronize: true,
     }),
     UserModule,
