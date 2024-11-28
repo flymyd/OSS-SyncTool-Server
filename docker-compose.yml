@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  oss-sync-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: oss-sync-server
+    ports:
+      - "8965:8965"
+    environment:
+      - NODE_ENV=production
+      - PORT=8965
+      # 数据库配置
+      - DB_HOST=数据库IP
+      - DB_PORT=3306
+      - DB_USERNAME=root
+      - DB_PASSWORD=数据库密码
+      - DB_DATABASE=osstool
+      # 数据文件保存路径
+      - WORKSPACE_BASE_DIR=/root/oss-workspace
+      # 阿里云OSS配置
+      - OSS_ACCESS_KEY_ID=your_access_key_id
+      - OSS_ACCESS_KEY_SECRET=your_access_key_secret
+    restart: unless-stopped
+    networks:
+      - oss-sync-network
+
+networks:
+  oss-sync-network:
+    driver: bridge 

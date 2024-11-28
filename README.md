@@ -29,3 +29,12 @@ npm i
 npm run build
 npm run start:prod
 ```
+
+## Docker运行
+
+```bash
+# 构建镜像
+docker build -t oss-sync-tool-server .
+# 执行
+docker-compose up -d # 参阅docker-compose.yml
+```
