@@ -205,4 +205,45 @@ export class WorkspaceRecordController {
     
     res.end();
   }
+
+  @Get('download/:id')
+  async downloadFile(
+    @Param('id') id: number,
+    @Res() res: Response,
+  ) {
+    try {
+      const record = await this.workspaceRecordService.findOne(id);
+      if (!record) {
+        throw new NotFoundException('文件不存在');
+      }
+
+      const workspaceDir = this.workspaceRecordService.getWorkspaceDir(record.workspaceId);
+      const cleanFilePath = record.filePath.startsWith('/') ? record.filePath.slice(1) : record.filePath;
+      const filePath = path.join(workspaceDir, cleanFilePath);
+
+      if (!fs.existsSync(filePath)) {
+        throw new NotFoundException('文件不存在');
+      }
+
+      // 设置响应头
+      res.setHeader('Content-Type', 'application/octet-stream');
+      res.setHeader('Content-Disposition', `attachment; filename=${encodeURIComponent(path.basename(record.filePath))}`);
+
+      // 创建文件流并发送
+      const fileStream = fs.createReadStream(filePath);
+      fileStream.pipe(res);
+
+      fileStream.on('error', (error) => {
+        console.error('文件读取错误:', error);
+        if (!res.headersSent) {
+          res.status(500).send('文件读取错误');
+        }
+      });
+    } catch (error) {
+      console.error('下载错误:', error);
+      if (!res.headersSent) {
+        res.status(500).send('下载失败');
+      }
+    }
+  }
 } 
