@@ -20,7 +20,7 @@ export class SyncTaskRecord {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ManyToOne(() => SyncTask, syncTask => syncTask.records)
+  @ManyToOne(() => SyncTask, syncTask => syncTask.records, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'syncTaskId' })
   syncTask: SyncTask;
 

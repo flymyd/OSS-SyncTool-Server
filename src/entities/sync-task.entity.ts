@@ -23,7 +23,7 @@ export class SyncTask {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ManyToOne(() => Workspace)
+  @ManyToOne(() => Workspace, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'workspaceId' })
   workspace: Workspace;
 
@@ -56,7 +56,7 @@ export class SyncTask {
   @Column({ default: 0 })
   failedFiles: number;
 
-  @OneToMany(() => SyncTaskRecord, record => record.syncTask)
+  @OneToMany(() => SyncTaskRecord, record => record.syncTask, { cascade: true })
   records: SyncTaskRecord[];
 
   @CreateDateColumn()

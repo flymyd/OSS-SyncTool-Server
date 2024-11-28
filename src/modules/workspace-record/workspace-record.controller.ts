@@ -11,6 +11,7 @@ import {
   UseInterceptors,
   NotFoundException,
   Res,
+  Query,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { WorkspaceRecordService } from './workspace-record.service';
@@ -26,6 +27,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 import { SyncTask, SyncTaskStatus } from '../../entities/sync-task.entity';
 import { SyncTaskRecord, SyncTaskRecordStatus } from '../../entities/sync-task-record.entity';
+import { SyncTaskQueryDto, SyncTaskResponseDto, SyncTaskListResponseDto } from './dto/sync-task.dto';
 
 interface SyncFileInfo {
   id: number;
@@ -156,5 +158,51 @@ export class WorkspaceRecordController {
       '.webp': 'image/webp',
     };
     return mimeTypes[ext] || 'application/octet-stream';
+  }
+
+  @UseGuards(AuthGuard)
+  @Get('sync-tasks')
+  async getSyncTasks(@Query() query: SyncTaskQueryDto): Promise<SyncTaskListResponseDto> {
+    return this.workspaceRecordService.getSyncTasks(query);
+  }
+
+  @UseGuards(AuthGuard)
+  @Get('sync-task/:id')
+  async getSyncTaskDetail(@Param('id') id: number): Promise<SyncTaskResponseDto> {
+    return this.workspaceRecordService.getSyncTaskDetail(id);
+  }
+
+  @Get('sync-task/:id/export')
+  async exportSyncTaskRecords(
+    @Param('id') id: number,
+    @Res() res: Response,
+  ) {
+    const records = await this.workspaceRecordService.getSyncTaskRecordsForExport(id);
+    
+    // 设置响应头
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename=sync-task-${id}-records.csv`);
+    
+    // 写入 CSV 头
+    res.write('\ufeff'); // 添加 BOM，解决中文乱码
+    res.write('文件名,文件路径,文件大小(KB),MD5,修改时间,修改人,同步状态,错误信息\n');
+    
+    // 写入数据
+    records.forEach(record => {
+      const row = [
+        record.fileName,
+        record.filePath,
+        (record.fileSize / 1024).toFixed(2),
+        record.fileMd5,
+        new Date(record.lastModified).toLocaleString(),
+        record.modifier.username,
+        record.status === SyncTaskRecordStatus.SUCCESS ? '成功' : '失败',
+        record.errorMessage || '',
+      ].map(field => `"${field}"`).join(',');
+      
+      res.write(row + '\n');
+    });
+    
+    res.end();
   }
 } 

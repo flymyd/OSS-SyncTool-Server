@@ -18,6 +18,7 @@ import {
 import { FileInfo } from '../../types/workspace';
 import { SyncTask, SyncTaskStatus } from '../../entities/sync-task.entity';
 import { SyncTaskRecord, SyncTaskRecordStatus } from '../../entities/sync-task-record.entity';
+import { SyncTaskQueryDto, SyncTaskResponseDto, SyncTaskListResponseDto } from './dto/sync-task.dto';
 
 // 在文件顶部添加接口定义
 interface SyncFileInfo {
@@ -364,5 +365,130 @@ export class WorkspaceRecordService {
     }
 
     return syncTask;
+  }
+
+  async getSyncTasks(query: SyncTaskQueryDto): Promise<SyncTaskListResponseDto> {
+    const queryBuilder = this.syncTaskRepository
+      .createQueryBuilder('syncTask')
+      .leftJoinAndSelect('syncTask.workspace', 'workspace')
+      .leftJoinAndSelect('syncTask.creator', 'creator')
+      .leftJoinAndSelect('syncTask.records', 'records')
+      .leftJoinAndSelect('records.modifier', 'modifier');
+
+    if (query.workspaceName) {
+      queryBuilder.andWhere('workspace.name LIKE :workspaceName', {
+        workspaceName: `%${query.workspaceName}%`,
+      });
+    }
+
+    if (query.fileName) {
+      queryBuilder.andWhere('records.fileName LIKE :fileName', {
+        fileName: `%${query.fileName}%`,
+      });
+    }
+
+    if (query.filePath) {
+      queryBuilder.andWhere('records.filePath LIKE :filePath', {
+        filePath: `%${query.filePath}%`,
+      });
+    }
+
+    if (query.modifierName) {
+      queryBuilder.andWhere('modifier.username LIKE :modifierName', {
+        modifierName: `%${query.modifierName}%`,
+      });
+    }
+
+    if (query.startTime) {
+      queryBuilder.andWhere('syncTask.createdAt >= :startTime', {
+        startTime: query.startTime,
+      });
+    }
+
+    if (query.endTime) {
+      queryBuilder.andWhere('syncTask.createdAt <= :endTime', {
+        endTime: query.endTime,
+      });
+    }
+
+    if (query.status) {
+      queryBuilder.andWhere('syncTask.status = :status', {
+        status: query.status,
+      });
+    }
+
+    const total = await queryBuilder.getCount();
+    const items = await queryBuilder
+      .orderBy('syncTask.createdAt', 'DESC')
+      .skip((query.page - 1) * query.pageSize)
+      .take(query.pageSize)
+      .getMany();
+
+    return {
+      total,
+      items: items.map(item => this.transformToSyncTaskDto(item)),
+    };
+  }
+
+  async getSyncTaskDetail(id: number): Promise<SyncTaskResponseDto> {
+    const syncTask = await this.syncTaskRepository.findOne({
+      where: { id },
+      relations: ['workspace', 'creator', 'records', 'records.modifier'],
+    });
+
+    if (!syncTask) {
+      throw new NotFoundException('同步任务不存在');
+    }
+
+    return this.transformToSyncTaskDto(syncTask);
+  }
+
+  private transformToSyncTaskDto(syncTask: SyncTask): SyncTaskResponseDto {
+    return {
+      id: syncTask.id,
+      workspace: {
+        id: syncTask.workspace.id,
+        name: syncTask.workspace.name,
+      },
+      creator: {
+        id: syncTask.creator.id,
+        username: syncTask.creator.username,
+      },
+      targetEnv: syncTask.targetEnv,
+      status: syncTask.status,
+      totalFiles: syncTask.totalFiles,
+      failedFiles: syncTask.failedFiles,
+      createdAt: syncTask.createdAt,
+      updatedAt: syncTask.updatedAt,
+      records: syncTask.records.map(record => ({
+        id: record.id,
+        filePath: record.filePath,
+        fileName: record.fileName,
+        fileSize: record.fileSize,
+        fileMd5: record.fileMd5,
+        lastModified: record.lastModified,
+        modifier: {
+          id: record.modifier.id,
+          username: record.modifier.username,
+        },
+        status: record.status,
+        errorMessage: record.errorMessage,
+        createdAt: record.createdAt,
+        updatedAt: record.updatedAt,
+      })),
+    };
+  }
+
+  async getSyncTaskRecordsForExport(id: number): Promise<SyncTaskRecord[]> {
+    const syncTask = await this.syncTaskRepository.findOne({
+      where: { id },
+      relations: ['records', 'records.modifier'],
+    });
+
+    if (!syncTask) {
+      throw new NotFoundException('同步任务不存在');
+    }
+
+    return syncTask.records;
   }
 } 
