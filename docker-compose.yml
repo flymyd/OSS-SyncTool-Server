@@ -17,14 +17,18 @@ services:
       - DB_USERNAME=root
       - DB_PASSWORD=数据库密码
       - DB_DATABASE=osstool
-      # 数据文件保存路径
-      - WORKSPACE_BASE_DIR=/root/oss-workspace
+      # 数据文件保存路径（容器中的）
+      - WORKSPACE_BASE_DIR=/home/node/oss-workspace
       # 阿里云OSS配置
       - OSS_ACCESS_KEY_ID=your_access_key_id
       - OSS_ACCESS_KEY_SECRET=your_access_key_secret
+    volumes:
+      # 数据文件保存路径（宿主机中的）
+      - /root/oss-workspace:/home/node/oss-workspace:rw
     restart: unless-stopped
     networks:
       - oss-sync-network
+    user: "node"
 
 networks:
   oss-sync-network:

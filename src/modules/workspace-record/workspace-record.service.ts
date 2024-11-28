@@ -55,7 +55,13 @@ export class WorkspaceRecordService {
   }
 
   public getWorkspaceDir(workspaceId: number): string {
-    return path.join(this.baseDir, workspaceId.toString());
+    const dir = path.join(this.baseDir, workspaceId.toString());
+    console.log('获取工作区目录:', {
+      baseDir: this.baseDir,
+      workspaceId,
+      resultDir: dir
+    });
+    return dir;
   }
 
   private async ensureWorkspaceDir(workspaceId: number): Promise<void> {
@@ -69,16 +75,38 @@ export class WorkspaceRecordService {
     const fullPath = path.join(this.getWorkspaceDir(workspaceId), filePath);
     const dir = path.dirname(fullPath);
     
-    // 确保目录存在
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
+    console.log('写入文件信息:', {
+      workspaceId,
+      filePath,
+      fullPath,
+      dir,
+      contentLength: content.length
+    });
+    
+    try {
+      if (!fs.existsSync(dir)) {
+        console.log('创建目录:', dir);
+        await fs.promises.mkdir(dir, { recursive: true });
+      }
+      
+      await fs.promises.writeFile(fullPath, content);
+      console.log('文件写入成功:', fullPath);
+      
+      // 验证文件是否写入成功
+      const stats = await fs.promises.stat(fullPath);
+      console.log('文件状态:', {
+        size: stats.size,
+        mode: stats.mode,
+        uid: stats.uid,
+        gid: stats.gid
+      });
+      
+      await fs.promises.chmod(fullPath, 0o644);
+      console.log('文件权限设置成功');
+    } catch (error) {
+      console.error('写入文件错误:', error);
+      throw error;
     }
-    
-    // 写入文件
-    await fs.promises.writeFile(fullPath, content);
-    
-    // 设置文件权限确保可读
-    await fs.promises.chmod(fullPath, 0o644);
   }
 
   async create(
@@ -289,10 +317,13 @@ export class WorkspaceRecordService {
   }
 
   async findOne(id: number): Promise<WorkspaceRecord | null> {
-    return this.workspaceRecordRepository.findOne({
+    console.log('查找记录:', id);
+    const record = await this.workspaceRecordRepository.findOne({
       where: { id },
       relations: ['workspace'],
     });
+    console.log('查找结果:', record);
+    return record;
   }
 
   async syncFiles(

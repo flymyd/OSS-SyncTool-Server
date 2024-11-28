@@ -33,6 +33,10 @@ npm run start:prod
 ## Docker运行
 
 ```bash
+# 在宿主机上创建目录并设置权限
+mkdir -p /root/oss-workspace
+chown -R 1000:1000 /root/oss-workspace  
+chmod -R 755 /root/oss-workspace
 # 构建镜像
 docker build -t oss-sync-tool-server .
 # 执行

@@ -24,5 +24,13 @@ EXPOSE 8965
 # 设置环境变量
 ENV NODE_ENV=production
 
+# 创建工作区目录并设置合适的权限
+RUN mkdir -p /home/node/oss-workspace && \
+    chown -R node:node /home/node/oss-workspace && \
+    chmod -R 755 /home/node/oss-workspace
+
+# 切换到非 root 用户
+USER node
+
 # 启动应用
 CMD ["npm", "run", "start:prod"] 

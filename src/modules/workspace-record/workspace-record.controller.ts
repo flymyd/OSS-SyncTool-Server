@@ -113,14 +113,13 @@ export class WorkspaceRecordController {
     try {
       const record = await this.workspaceRecordService.findOne(id);
       if (!record) {
+        console.log('记录不存在，ID:', id);
         throw new NotFoundException('文件不存在');
       }
 
-      const workspaceDir = this.workspaceRecordService.getWorkspaceDir(record.workspaceId);
+      const workspaceDir = this.workspaceRecordService.getWorkspaceDir(record.workspace.id);
       const cleanFilePath = record.filePath.startsWith('/') ? record.filePath.slice(1) : record.filePath;
       const filePath = path.join(workspaceDir, cleanFilePath);
-
-      console.log('预览文件路径:', filePath);
 
       if (!fs.existsSync(filePath)) {
         console.log('文件不存在:', filePath);
@@ -128,6 +127,13 @@ export class WorkspaceRecordController {
       }
 
       const mimeType = this.getMimeType(filePath);
+      
+      // 添加 CORS 和缓存控制头
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+      res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+      res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+      res.setHeader('Cache-Control', 'public, max-age=3600');
       res.setHeader('Content-Type', mimeType);
 
       const fileStream = fs.createReadStream(filePath);
