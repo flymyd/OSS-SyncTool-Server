@@ -1,5 +1,8 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
+import { config } from 'dotenv';
+
+config(); // 在应用启动时加载环境变量
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);

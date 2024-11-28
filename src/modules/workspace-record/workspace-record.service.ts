@@ -19,6 +19,7 @@ import { FileInfo } from '../../types/workspace';
 import { SyncTask, SyncTaskStatus } from '../../entities/sync-task.entity';
 import { SyncTaskRecord, SyncTaskRecordStatus } from '../../entities/sync-task-record.entity';
 import { SyncTaskQueryDto, SyncTaskResponseDto, SyncTaskListResponseDto } from './dto/sync-task.dto';
+import { OSSUploader } from '../../utils/OSSUploader';
 
 // 在文件顶部添加接口定义
 interface SyncFileInfo {
@@ -344,9 +345,17 @@ export class WorkspaceRecordService {
       });
 
       try {
-        // TODO: 这里实现实际的OSS上传逻辑
-        // await this.uploadToOSS(file, env);
-        
+        // 读取文件内容
+        const workspaceDir = this.getWorkspaceDir(workspaceId);
+        const filePath = path.join(workspaceDir, file.path.startsWith('/') ? file.path.slice(1) : file.path);
+        const fileContent = await fs.promises.readFile(filePath);
+        // 上传到 OSS
+        const uploadResult = await OSSUploader.uploadFile(file.path, fileContent, env);
+
+        if (!uploadResult.success) {
+          throw new Error(uploadResult.error || '上传失败');
+        }
+
         await this.syncTaskRecordRepository.save(syncTaskRecord);
       } catch (error) {
         syncTaskRecord.status = SyncTaskRecordStatus.FAILED;
