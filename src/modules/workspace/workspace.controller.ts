@@ -7,6 +7,7 @@ import {
   Post,
   Request,
   UseGuards,
+  Query,
 } from '@nestjs/common';
 import { WorkspaceService } from './workspace.service';
 import { CreateWorkspaceDto, WorkspaceResponseDto } from './dto/workspace.dto';
@@ -26,8 +27,11 @@ export class WorkspaceController {
   }
 
   @Get()
-  findAll(): Promise<WorkspaceResponseDto[]> {
-    return this.workspaceService.findAll();
+  findAll(
+    @Query('name') name?: string,
+    @Query('creatorName') creatorName?: string,
+  ): Promise<WorkspaceResponseDto[]> {
+    return this.workspaceService.findAll({ name, creatorName });
   }
 
   @Delete(':id')

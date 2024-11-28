@@ -44,10 +44,23 @@ export class WorkspaceService {
     return this.transformToDto(savedWorkspace);
   }
 
-  async findAll(): Promise<WorkspaceResponseDto[]> {
-    const workspaces = await this.workspaceRepository.find({
-      relations: ['creator'],
-    });
+  async findAll(query?: { name?: string; creatorName?: string }): Promise<WorkspaceResponseDto[]> {
+    const queryBuilder = this.workspaceRepository
+      .createQueryBuilder('workspace')
+      .leftJoinAndSelect('workspace.creator', 'creator');
+
+    if (query?.name) {
+      queryBuilder.andWhere('workspace.name LIKE :name', { name: `%${query.name}%` });
+    }
+
+    if (query?.creatorName) {
+      queryBuilder.andWhere('creator.username LIKE :creatorName', { creatorName: `%${query.creatorName}%` });
+    }
+
+    const workspaces = await queryBuilder
+      .orderBy('workspace.createdAt', 'DESC')
+      .getMany();
+
     return workspaces.map((workspace) => this.transformToDto(workspace));
   }
 
