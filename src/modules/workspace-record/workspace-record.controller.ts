@@ -128,12 +128,14 @@ export class WorkspaceRecordController {
 
       const mimeType = this.getMimeType(filePath);
       
-      // 添加 CORS 和缓存控制头
+      // 修改缓存控制头，禁用缓存
       res.setHeader('Access-Control-Allow-Origin', '*');
       res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
       res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
       res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
-      res.setHeader('Cache-Control', 'public, max-age=3600');
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
       res.setHeader('Content-Type', mimeType);
 
       const fileStream = fs.createReadStream(filePath);
