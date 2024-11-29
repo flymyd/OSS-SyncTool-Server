@@ -1,10 +1,12 @@
 version: '3.8'
 
 services:
-  oss-sync-server:
+  oss-sync-tool-server:
     build:
       context: .
       dockerfile: Dockerfile
+    image: oss-sync-tool-server
+    container_name: oss-sync-tool-server
     ports:
       - "8965:8965"
     environment:
