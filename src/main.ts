@@ -17,13 +17,9 @@ async function bootstrap() {
     origin: true,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
-    allowedHeaders: ['Content-Type', 'Authorization'],
-    exposedHeaders: ['Content-Disposition'],
   });
 
-  const port = process.env.PORT || 8965;
-  await app.listen(port);
+  await app.listen(process.env.PORT ?? 8965);
   console.log(`应用运行在 ${process.env.NODE_ENV} 环境`);
-  console.log(`服务器运行在: http://localhost:${port}`);
 }
 bootstrap();
