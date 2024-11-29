@@ -5,7 +5,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: oss-sync-server
     ports:
       - "8965:8965"
     environment:
