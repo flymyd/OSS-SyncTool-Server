@@ -157,10 +157,13 @@ export class WorkspaceRecordService {
       return this.transformToDto(updatedRecord);
     } else {
       // 如果不存在记录，则创建新记录
+      const createdAt = new Date().toISOString();
+
       const record = this.workspaceRecordRepository.create({
         ...createDto,
         workspace,
         modifier,
+        createdAt,
       });
       const savedRecord = await this.workspaceRecordRepository.save(record);
       return this.transformToDto(savedRecord);
@@ -310,7 +313,7 @@ export class WorkspaceRecordService {
     const records = await this.workspaceRecordRepository.find({
       where: { workspace: { id: workspaceId } },
       relations: ['workspace', 'modifier'],
-      order: { createdAt: 'DESC' },
+      order: { updatedAt: 'DESC' },
     });
 
     return records.map(record => this.transformToDto(record));

@@ -202,7 +202,7 @@ export class WorkspaceRecordController {
         record.filePath,
         (record.fileSize / 1024).toFixed(2),
         record.fileMd5,
-        new Date(record.lastModified).toLocaleString(),
+        new Date(record.lastModified).toISOString(),
         record.modifier.username,
         record.status === SyncTaskRecordStatus.SUCCESS ? '成功' : '失败',
         record.errorMessage || '',
